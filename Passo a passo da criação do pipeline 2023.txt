@@ -1,0 +1,163 @@
+
+Extract
+
+import pandas as pd
+
+df = pd.read_csv('SDW2023.csv.txt')
+user_ids = df['UserID'].tolist()
+print(user_ids)
+# [1973, 1974, 1975]
+
+**************************************  
+
+
+import requests
+import json
+
+def get_user(id):
+  response = requests.get(f'{sdw2023_api_url}/users/{id}')
+  return response.json() if response.status_code == 200 else None
+
+users = [user for id in user_ids if (user := get_user(id)) is not None]
+print(json.dumps(users, indent=2))
+
+[
+  {
+    "id": 1973,
+    "name": "Patr\u00edcio",
+    "account": {
+      "id": 2063,
+      "number": "20100-1",
+      "agency": "string",
+      "balance": 0.0,
+      "limit": 0.0
+    },
+    "card": {
+      "id": 1906,
+      "number": "**** **** **** 4010",
+      "limit": 0.0
+    },
+    "features": [
+      {
+        "id": 645,
+        "icon": "string",
+        "description": "string"
+      }
+    ],
+    "news": [
+      {
+        "id": 3655,
+        "icon": "string",
+        "description": "string"
+      }
+    ]
+  },
+  {
+    "id": 1974,
+    "name": "Roberto",
+    "account": {
+      "id": 2064,
+      "number": "30100-1",
+      "agency": "string",
+      "balance": 0.0,
+      "limit": 0.0
+    },
+    "card": {
+      "id": 1907,
+      "number": "1212 **** **** 4010",
+      "limit": 0.0
+    },
+    "features": [
+      {
+        "id": 646,
+        "icon": "string",
+        "description": "string"
+      }
+    ],
+    "news": [
+      {
+        "id": 3656,
+        "icon": "string",
+        "description": "string"
+      }
+    ]
+  },
+  {
+    "id": 1975,
+    "name": "Manoel",
+    "account": {
+      "id": 2065,
+      "number": "40100-1",
+      "agency": "string",
+      "balance": 0.0,
+      "limit": 0.0
+    },
+    "card": {
+      "id": 1908,
+      "number": "1213 **** **** 4010",
+      "limit": 0.0
+    },
+    "features": [
+      {
+        "id": 647,
+        "icon": "string",
+        "description": "string"
+      }
+    ],
+    "news": [
+      {
+        "id": 3657,
+        "icon": "string",
+        "description": "string"
+      }
+    ]
+  }
+]
+
+TRANSFORM
+
+import openai
+
+openai.api_key = openai_api_key
+
+def generate_ai_news(user):
+  completion = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+      {
+          "role": "system",
+          "content": "Você é um especialista em markting bancário."
+      },
+      {
+          "role": "user",
+          "content": f"Crie uma mensagem para {user['name']} sobre a importância dos investimentos (máximo de 100 caracteres)"
+      }
+    ]
+  )
+  return completion.choices[0].message.content.strip('\"')
+
+for user in users:
+  news = generate_ai_news(user)
+  print(news)
+  user['news'].append({
+      "icon": "https://digitalinnovationone.github.io/santander-dev-week-2023-api/icons/credit.svg",
+      "description": news
+  })
+
+# Seu futuro financeiro depende de investimentos estratégicos Patricio.
+# Roberto, Invista com inteligência e garanta seu futuro financeiro. #InvestimentosEssenciais
+# Invista hoje, colha amanhã Manoel!
+
+LOAD
+
+def update_user(user):
+  response = requests.put(f"{sdw2023_api_url}/users/{user['id']}", json=user)
+  return True if response.status_code == 200 else False
+
+for user in users:
+  success = update_user(user)
+  print(f"User {user['name']} updated? {success}!")
+
+# User Patrício updated? True!
+# User Roberto updated? True!
+# User Manoel updated? True!
